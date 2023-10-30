@@ -1,16 +1,27 @@
 #pragma once
 #include "Point.h"
+#include <iterator>
+#include <array>
 #include "Edge.h"
 
 class Triangle
 {
 public:
-	Triangle(Point a = Point(), Point b = Point(), Point c = Point());
+	Triangle(const Point &a = Point(), const Point &b = Point(), const Point &c = Point());
+	template <typename Iter>
+	Triangle(const Iter& begin, const Iter& end);
 	Point a();
 	Point b();
 	Point c();
+	std::vector<Edge> edges();
+	bool operator==(const Triangle& t) const
+	{
+		return p_a == t.p_a && p_b == t.p_b && p_c == t.p_c
+			|| p_a == t.p_b && p_b == t.p_c && p_c == t.p_a
+			|| p_a == t.p_c && p_b == t.p_a && p_c == t.p_b;
+	};
 private:
 	Point p_a, p_b, p_c;
-	Edge ab, bc, ca;
+	std::vector<Edge> p_edges;
+	void createEdges();
 };
-

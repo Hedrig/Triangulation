@@ -1,10 +1,11 @@
 #pragma once
-class Point
+struct Point
 {
 public:
-	float x();
-	float y();
-	float z();
+	Point(int i = 0, float x, float y, float z);
+	float x() const;
+	float y() const;
+	float z() const;
 	int index();
 	bool operator==(const Point& p) const {
 		return this->p_x == p.p_x && this->p_y == p.p_y && this->p_z == p.p_z;
