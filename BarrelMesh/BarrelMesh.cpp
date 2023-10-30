@@ -11,7 +11,7 @@
 
 int main()
 {
-    std::cout << "Hello World!\n";
+    
 }
 
 std::list<Triangle> makeTriangulation(const std::list<Point> &p_points)
@@ -39,4 +39,5 @@ std::list<Triangle> makeTriangulation(const std::list<Point> &p_points)
             }
         triangles.push_back(Triangle(point, minimumEdge.a(), minimumEdge.b()));
     }
+    return triangles;
 }
