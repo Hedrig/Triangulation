@@ -1,7 +1,7 @@
 #include "Vector.h"
 
 Vector::Vector(const Point &point)
-    : point {point}
+    : point { point }
 {}
 
 Vector::Vector(float x, float y, float z)
@@ -22,7 +22,7 @@ Vector Vector::operator*(const Vector& v)
 
 float Vector::magnitude()
 {
-    return sqrt(x() * x() + y() * y() + z() * z());
+    return (float)sqrt(x() * x() + y() * y() + z() * z());
 }
 
 float Vector::x() const
