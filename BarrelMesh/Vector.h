@@ -3,6 +3,8 @@
 #include <math.h>
 class Vector
 {
+	// Класс вектора необходим только для расчётов расстояния между
+	// точкой и прямой, поэтому его функционал сведён к минимуму
 public:
 	Vector(const Point& point = Point());
 	Vector(float x = 0, float y = 0, float z = 0);

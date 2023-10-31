@@ -77,6 +77,10 @@ std::list<Triangle> makeTriangulation(const std::list<Point>& p_points)
     triangles.push_back(Triangle(first_points));
     float min;
     Edge minimumEdge;
+    /* Алгоритм простой: для каждой новой точки найти ближайшую к ней грань последнего добавленного треугольника.
+     * Затем построить треугольник с этой гранью и этой точкой.
+     * Алгоритм предполагает, что точки в массиве точек отсортированы.
+     */
     for (auto& point : points)
     {
         min = std::numeric_limits<float>().max();

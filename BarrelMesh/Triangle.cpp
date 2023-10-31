@@ -39,5 +39,8 @@ std::vector<Edge> Triangle::edges()
 
 void Triangle::createEdges()
 {
-    p_edges = std::vector<Edge>{ Edge(p_a, p_b),Edge(p_b, p_c), Edge(p_c, p_a) };
+    p_edges = std::vector<Edge>{ 
+        Edge(p_a, p_b),
+        Edge(p_b, p_c),
+        Edge(p_c, p_a) };
 }
