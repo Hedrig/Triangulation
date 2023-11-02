@@ -145,6 +145,6 @@ int main(int argc, char* argv[])
     }
     std::list<Triangle> triangles = makeTriangulation(points);
     int result = writeResultsToFile(outputFileName, points, triangles);
-    
+    std::cout << "File " << outputFileName << " created successfully";
     return result;
 }
