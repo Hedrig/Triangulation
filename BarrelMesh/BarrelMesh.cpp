@@ -57,7 +57,8 @@ int writeResultsToFile(const std::string &outputFileName, const std::list<Point>
     outputFile << "* Elements:" << std::endl;
     for (auto& triangle : triangles)
     {
-        outputFile << "\t" << triangle.a().index() << del
+        outputFile << "\t" << triangle.index() << del
+                           << triangle.a().index() << del
                            << triangle.b().index() << del
                            << triangle.c().index() << std::endl;
     }
@@ -74,7 +75,8 @@ std::list<Triangle> makeTriangulation(const std::list<Point>& p_points)
         first_points.push_back(points.front());
         points.pop_front();
     }
-    triangles.push_back(Triangle(first_points));
+    triangles.push_back(Triangle(1, first_points));
+    int triangleIndex = 2;
     float min;
     Edge minimumEdge;
     /* Алгоритм простой: для каждой новой точки найти ближайшую к ней грань последнего добавленного треугольника.
@@ -94,7 +96,7 @@ std::list<Triangle> makeTriangulation(const std::list<Point>& p_points)
                 min = distance;
             }
         }
-        triangles.push_back(Triangle(point, minimumEdge.a(), minimumEdge.b()));
+        triangles.push_back(Triangle(triangleIndex++, point, minimumEdge.a(), minimumEdge.b()));
     }
     return triangles;
 }

@@ -1,12 +1,13 @@
 #include "Triangle.h"
 
-Triangle::Triangle(const Point &a, const Point &b, const Point &c)
-    : p_a{ a }, p_b{ b }, p_c{ c }
+Triangle::Triangle(int index, const Point &a, const Point &b, const Point &c)
+    : p_index{ index }, p_a { a }, p_b{ b }, p_c{ c }
 {
     createEdges();
 }
 
-Triangle::Triangle(const std::vector<Point> &points)
+Triangle::Triangle(int index, const std::vector<Point> &points)
+    :p_index{ index }
 {
     p_a = points[0];
     p_b = points[1];
@@ -14,6 +15,11 @@ Triangle::Triangle(const std::vector<Point> &points)
     createEdges();
 }
 
+
+int Triangle::index() const
+{
+    return p_index;
+}
 
 Point Triangle::a() const
 {

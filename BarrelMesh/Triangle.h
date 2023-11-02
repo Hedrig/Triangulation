@@ -8,8 +8,9 @@
 class Triangle
 {
 public:
-	Triangle(const Point &a = Point(), const Point &b = Point(), const Point &c = Point());
-	Triangle(const std::vector<Point> &points);
+	Triangle(int index, const Point &a = Point(), const Point &b = Point(), const Point &c = Point());
+	Triangle(int index, const std::vector<Point> &points);
+	int index() const;
 	Point a() const;
 	Point b() const;
 	Point c() const;
@@ -21,6 +22,7 @@ public:
 			|| p_a == t.p_c && p_b == t.p_a && p_c == t.p_b;
 	};
 private:
+	int p_index;
 	Point p_a, p_b, p_c;
 	std::vector<Edge> p_edges;
 	void createEdges();
