@@ -143,6 +143,7 @@ int main(int argc, char* argv[])
         std::cout << "Points weren't read; possible file formatting error?";
         return 1;
     }
+    points.sort();
     std::list<Triangle> triangles = makeTriangulation(points);
     int result = writeResultsToFile(outputFileName, points, triangles);
     std::cout << "File " << outputFileName << " created successfully";
