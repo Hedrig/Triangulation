@@ -16,13 +16,13 @@ Vector Vector::operator-(const Vector& v)
 Vector Vector::operator*(const Vector& v)
 {
     return Vector(y() * v.z() - z() * v.y(),
-                  x() * v.z() - z() * v.x(),
+                  -(x() * v.z() - z() * v.x()),
                   x() * v.y() - y() * v.x());
 }
 
 float Vector::magnitude()
 {
-    return (float)sqrt(x() * x() + y() * y() + z() * z());
+    return (float)sqrt(length());
 }
 
 float Vector::x() const
@@ -38,4 +38,19 @@ float Vector::y() const
 float Vector::z() const
 {
     return point.z();
+}
+
+Vector Vector::normal(const Point& a, const Point& b, const Point& c)
+{
+    return (Vector(b) - Vector(a)) * (Vector(c) - Vector(a));
+}
+
+float Vector::dot(const Vector& v)
+{
+    return x() * v.x() + y() * v.y() + z() * v.z();
+}
+
+float Vector::length()
+{
+    return dot(*this);
 }

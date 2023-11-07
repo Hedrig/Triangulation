@@ -128,14 +128,18 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="BarrelMesh.cpp" />
+    <ClCompile Include="Circumsphere.cpp" />
     <ClCompile Include="Edge.cpp" />
     <ClCompile Include="Point.cpp" />
+    <ClCompile Include="Tetrahedron.cpp" />
     <ClCompile Include="Triangle.cpp" />
     <ClCompile Include="Vector.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Circumsphere.h" />
     <ClInclude Include="Edge.h" />
     <ClInclude Include="Point.h" />
+    <ClInclude Include="Tetrahedron.h" />
     <ClInclude Include="Triangle.h" />
     <ClInclude Include="Vector.h" />
   </ItemGroup>

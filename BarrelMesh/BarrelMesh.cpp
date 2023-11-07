@@ -9,9 +9,15 @@
 #include <sstream>
 #include <string>
 #include <stdexcept>
+#include <stack>
+#include <algorithm>
+#include <unordered_map>
+#include <unordered_set>
+
 #include "Triangle.h"
 #include "Point.h"
 #include "Edge.h"
+#include "Tetrahedron.h"
 
 std::list<Point> readPointsFromFile(const std::string &inputFileName)
 {
@@ -55,9 +61,10 @@ int writeResultsToFile(const std::string &outputFileName, const std::list<Point>
                            << point.z() << std::endl;
     }
     outputFile << "* Elements:" << std::endl;
+    int triangleIndex = 1;
     for (auto& triangle : triangles)
     {
-        outputFile << "\t" << triangle.index() << del
+        outputFile << "\t" << triangleIndex++ << del
                            << triangle.a().index() << del
                            << triangle.b().index() << del
                            << triangle.c().index() << std::endl;
@@ -75,8 +82,7 @@ std::list<Triangle> makeTriangulation(const std::list<Point>& p_points)
         first_points.push_back(points.front());
         points.pop_front();
     }
-    triangles.push_back(Triangle(1, first_points));
-    int triangleIndex = 2;
+    triangles.push_back(Triangle(first_points));
     float min;
     Edge minimumEdge;
     /* Алгоритм простой: для каждой новой точки найти ближайшую к ней грань последнего добавленного треугольника.
@@ -96,9 +102,102 @@ std::list<Triangle> makeTriangulation(const std::list<Point>& p_points)
                 min = distance;
             }
         }
-        triangles.push_back(Triangle(triangleIndex++, point, minimumEdge.a(), minimumEdge.b()));
+        triangles.push_back(Triangle(point, minimumEdge.a(), minimumEdge.b()));
     }
     return triangles;
+}
+
+std::list<Triangle> makeTRSPH3Triangulation(const std::list<Point>& p_points)
+{
+    std::unordered_set<Triangle> boundary;
+    std::stack<Triangle> interior;
+    std::list<Triangle> visible;
+    std::unordered_map<Triangle, Tetrahedron, std::hash<Triangle>> triangles;
+    std::list<Point> points = p_points;
+    points.sort();
+    std::vector<Point> first_points;
+    for (int i = 0; i < 4; i++)
+    {
+        first_points.push_back(points.front());
+        points.pop_front();
+    }
+    {
+        auto t = Tetrahedron(first_points);
+        boundary.insert(t.triangles().begin(), t.triangles().end());
+        for (auto& triangle : boundary)
+            triangles[triangle] = t;
+    }
+    int i = 4;
+    for (auto& point : points)
+    {
+        for (auto& triangle : boundary)
+            if (triangle.isVisible(point))
+                visible.push_back(triangle);
+            else
+                continue;
+        while (!visible.empty())
+        {
+            auto& tr = visible.front();
+            Tetrahedron tetra = triangles[tr];
+            if (tetra.inCircumsphere(point))
+            {
+                boundary.erase(tr);
+                for (auto& triangle : tetra.triangles())
+                {
+                    if (boundary.find(triangle) != boundary.end())
+                        interior.push(triangle);
+                    else
+                        if (std::find(visible.begin(), visible.end(), triangle) != visible.end())
+                        {
+                            boundary.erase(triangle);
+                            triangles.erase(triangle);
+                        }
+                        else
+                            visible.push_back(triangle);
+                }
+                triangles.erase(tr);
+            }
+            else
+                interior.push(tr);
+            visible.pop_front();
+        }
+        while (!interior.empty())
+        {
+            auto &tr = interior.top();
+            if (boundary.find(tr) != boundary.end()
+                && tr.isOnPlane(point))
+            {
+                boundary.erase(tr);
+                triangles.erase(tr);
+            }
+            else
+            {
+                Tetrahedron t(tr, point);
+                for (auto &triangle : t.triangles())
+                {
+                    auto duplicate = boundary.find(triangle);
+                    if (duplicate != boundary.end())
+                    {
+                        boundary.erase(triangle);
+                        triangles.erase(triangle);
+                    }
+                    else
+                    {
+                        boundary.insert(triangle);
+                        triangles[triangle] = t;
+                    }
+                }
+            }
+            interior.pop();
+        }
+        std::cout << "Points triangulated: " << ++i << "/" << p_points.size() << '\r';
+    }
+    std::cout << std::endl;
+    std::list<Triangle> result;
+    for (auto it = triangles.begin(); it != triangles.end(); ++it)
+        result.push_back(it->first);
+    result.unique();
+    return result;
 }
 
 int main(int argc, char* argv[])
@@ -143,8 +242,7 @@ int main(int argc, char* argv[])
         std::cout << "Points weren't read; possible file formatting error?";
         return 1;
     }
-    points.sort();
-    std::list<Triangle> triangles = makeTriangulation(points);
+    std::list<Triangle> triangles = makeTRSPH3Triangulation(points);
     int result = writeResultsToFile(outputFileName, points, triangles);
     std::cout << "File " << outputFileName << " created successfully";
     return result;

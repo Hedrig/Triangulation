@@ -9,7 +9,7 @@ public:
 	float z() const;
 	int index() const;
 	bool operator==(const Point& p) const {
-		return this->p_x == p.p_x && this->p_y == p.p_y && this->p_z == p.p_z;
+		return p_i == p.p_i;
 	}
 	// Для сортировки в лексиграфическом порядке
 	bool operator<(const Point& p) const {
