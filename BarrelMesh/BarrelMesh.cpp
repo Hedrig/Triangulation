@@ -14,12 +14,22 @@
 #include <unordered_map>
 #include <unordered_set>
 
+#define CGAL_EIGEN3_ENABLED
+#include <CGAL/Point_set_3/IO/XYZ.h>
+#include <CGAL/Point_set_3.h>
+#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
+#include <CGAL/Surface_mesh/Surface_mesh.h>
+#include <CGAL/poisson_surface_reconstruction.h>
+#include <CGAL/compute_average_spacing.h>
+#include <CGAL/Polyhedron_3.h>
+#include <CGAL/IO/read_points.h>
+
 #include "Triangle.h"
 #include "Point.h"
 #include "Edge.h"
 #include "Tetrahedron.h"
 
-std::list<Point> readPointsFromFile(const std::string &inputFileName)
+std::list<Point> readPoints(const std::string &inputFileName)
 {
     std::ifstream inputFile(inputFileName);
     if (!inputFile.is_open())
@@ -45,7 +55,7 @@ std::list<Point> readPointsFromFile(const std::string &inputFileName)
     return points;
 }
 
-int writeResultsToFile(const std::string &outputFileName, const std::list<Point> points, const std::list<Triangle> triangles)
+int writeResultsToFile(const std::string &outputFileName, const std::list<Point> &points, const std::list<Triangle> &triangles)
 {
     std::ofstream outputFile(outputFileName);
     if (!outputFile.is_open())
@@ -70,6 +80,14 @@ int writeResultsToFile(const std::string &outputFileName, const std::list<Point>
                            << triangle.c().index() << std::endl;
     }
     return 0;
+}
+
+int writeResultsToFile(const std::string& outputFileName, const std::vector<Point>& points, const std::list<Triangle>& triangles)
+{
+    std::list<Point> pointList;
+    for (Point point : points)
+        pointList.push_back(point);
+    return writeResultsToFile(outputFileName, pointList, triangles);
 }
 
 std::list<Triangle> makeTriangulation(const std::list<Point>& p_points)
@@ -200,6 +218,96 @@ std::list<Triangle> makeTRSPH3Triangulation(const std::list<Point>& p_points)
     return result;
 }
 
+typedef CGAL::Exact_predicates_inexact_constructions_kernel Kernel;
+typedef Kernel::FT FT;
+typedef Kernel::Point_3 CPoint;
+typedef Kernel::Vector_3 CVector;
+typedef CGAL::Point_set_3<CPoint> Point_set;
+typedef std::pair<CPoint, CVector> Pwn;
+typedef CGAL::Polyhedron_3<Kernel> Polyhedron;
+typedef CGAL::Surface_mesh<Kernel::Point_3> Mesh;
+
+std::vector<Pwn> readCPoints(const std::string& inputFileName)
+{
+    std::ifstream inputFile(inputFileName);
+    if (!inputFile.is_open())
+        throw std::runtime_error("Input file with that name was not found");
+    int n; double x, y, z; char c;
+    std::vector<Pwn> points;
+    std::string line;
+    while (std::getline(inputFile, line))
+    {
+        if (line[0] == '*')
+            continue;
+        std::istringstream iss(line);
+        if (!(iss >> n >> c >> x >> c >> y >> c >> z))
+        {
+            std::string error;
+            std::ostringstream iss(error);
+            iss << "A line in an input file is incorrectly formatted." << std::endl
+                << "Problem line: \"" << line << "\"" << std::endl;
+            throw std::runtime_error(error);
+        }
+        points.push_back({ CPoint(n, x, y, z), CVector(n, x, y, z) });
+    }
+    return points;
+}
+int makeTriangulationCGAL(std::string inputFileName, const std::string outputFileName)
+{
+    std::cout << "Reading points from file...";
+    std::vector<Pwn> pwn_points = readCPoints(inputFileName);
+    std::cout << " Done" << std::endl;
+    Mesh output_mesh;
+    std::cout << "Performing Poisson surface reconstruction...";
+    double average_spacing = CGAL::compute_average_spacing<CGAL::Sequential_tag>
+        (pwn_points, 3, CGAL::parameters::point_map(CGAL::First_of_pair_property_map<Pwn>()));
+    if (!CGAL::poisson_surface_reconstruction_delaunay
+           (pwn_points.begin(), pwn_points.end(),
+            CGAL::First_of_pair_property_map<Pwn>(),
+            CGAL::Second_of_pair_property_map<Pwn>(),
+            output_mesh, average_spacing))
+        return EXIT_FAILURE;
+    std::cout << " Done" << std::endl;
+    std::ofstream out(outputFileName);
+    std::vector<Point> points;
+    std::list<Triangle> triangles;
+
+    std::cout << "Writing points and triangles...";
+    for (Mesh::Vertex_index vi : output_mesh.vertices()) {
+        CPoint pt = output_mesh.point(vi);
+        points.push_back({ (int)vi.id(), (float)pt.x(), (float)pt.y(), (float)pt.z() });
+    }
+    for (auto face_index : output_mesh.faces())
+    {
+        CGAL::Vertex_around_face_circulator<Mesh> vcirc(output_mesh.halfedge(face_index), output_mesh), done(vcirc);
+        do
+        {
+            std::vector<Point> face_points;
+
+            for (int i = 0; i < 3; i++)
+                face_points.push_back(Point(*vcirc, points[*vcirc].x(), points[*vcirc].y(), points[*vcirc].z()));
+            triangles.push_back(face_points);
+        } while (++vcirc != done);
+    }
+    int result = writeResultsToFile(outputFileName, points, triangles);
+    std::cout << " Done" << std::endl;
+    return result;
+}
+
+int readAndWrite(const std::string &inputFileName, const std::string &outputFileName)
+{
+    std::list<Point> points = readPoints(inputFileName);
+    if (points.size() == 0)
+    {
+        std::cout << "Points weren't read; possible file formatting error?";
+        return 1;
+    }
+    std::list<Triangle> triangles = makeTRSPH3Triangulation(points);
+    int result = writeResultsToFile(outputFileName, points, triangles);
+    std::cout << "File " << outputFileName << " created successfully";
+    return result;
+}
+
 int main(int argc, char* argv[])
 {
     if (argc != 5)
@@ -236,14 +344,5 @@ int main(int argc, char* argv[])
             continue;
         }
     }
-    std::list<Point> points = readPointsFromFile(inputFileName);
-    if (points.size() == 0)
-    {
-        std::cout << "Points weren't read; possible file formatting error?";
-        return 1;
-    }
-    std::list<Triangle> triangles = makeTRSPH3Triangulation(points);
-    int result = writeResultsToFile(outputFileName, points, triangles);
-    std::cout << "File " << outputFileName << " created successfully";
-    return result;
+    return makeTriangulationCGAL(inputFileName, outputFileName);
 }
