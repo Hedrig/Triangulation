@@ -275,7 +275,7 @@ int makeTriangulationCGAL(std::string inputFileName, const std::string outputFil
     std::cout << "Writing points and triangles...";
     for (Mesh::Vertex_index vi : output_mesh.vertices()) {
         CPoint pt = output_mesh.point(vi);
-        points.push_back({ (int)vi.id(), (float)pt.x(), (float)pt.y(), (float)pt.z() });
+        points.push_back({ (int)vi.id() + 1, (float)pt.x(), (float)pt.y(), (float)pt.z() });
     }
     for (auto face_index : output_mesh.faces())
     {
@@ -284,10 +284,11 @@ int makeTriangulationCGAL(std::string inputFileName, const std::string outputFil
         {
             std::vector<Point> face_points;
 
-            for (int i = 0; i < 3; i++)
-                face_points.push_back(Point(*vcirc, points[*vcirc].x(), points[*vcirc].y(), points[*vcirc].z()));
+            for (int i = 0; i < 3; i++, vcirc++)
+                face_points.push_back(points[*vcirc]);
             triangles.push_back(face_points);
-        } while (++vcirc != done);
+        }
+        while (vcirc != done);
     }
     int result = writeResultsToFile(outputFileName, points, triangles);
     std::cout << " Done" << std::endl;
